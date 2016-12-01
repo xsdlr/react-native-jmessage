@@ -1,0 +1,27 @@
+{
+  "author": {
+    "name": "xsdlr"
+  },
+  "dependencies": {
+    "base-64": "^0.1.0"
+  },
+  "description": "react-native library for jmessage",
+  "devDependencies": {
+    "react": "^15.3.2",
+    "react-native": "^0.37.0"
+  },
+  "gitHead": "a478215b47770cdead833c75060ec055d32283a3",
+  "keywords": [
+    "jmessage",
+    "react",
+    "react-native",
+    "react-component"
+  ],
+  "license": "MIT",
+  "main": "index.js",
+  "name": "react-native-jmessage",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "version": "1.0.0"
+}
