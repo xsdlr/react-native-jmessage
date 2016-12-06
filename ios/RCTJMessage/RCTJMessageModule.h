@@ -21,7 +21,6 @@
 @property NSString* masterSecret;
 
 + (void)setupJMessage:(NSDictionary *)launchOptions
-               appKey:(NSString *)appKey
               channel:(NSString *)channel
      apsForProduction:(BOOL)isProduction
              category:(NSSet *)category;
