@@ -40,12 +40,24 @@ export default class JMessage {
     JMessage.eventEmitter.removeAllListeners(eventNames);
   }
   static login(username, password) {
-    return JMessageModule.login(username, password);
+    return JMessageModule.login(username, password).then((info) => {
+      const {avatar} = info;
+      if(avatar) {
+        return requsetMediaURL(JMessage.authKey, avatar).then((data) => {
+          return {...info, ...{avatar: data.url}};
+        })
+      } else {
+        return info;
+      }
+    });
   }
   static logout() {
     return JMessageModule.logout();
   }
-  static sendSingleMessage({name, type, data={}}) {
-    return JMessageModule.sendSingleMessage(name, type, data);
+  static sendSingleMessage({name, type, data={}, timeout=30000}) {
+    return JMessageModule.sendSingleMessage(name, type, data, timeout);
+  }
+  static allConversations() {
+    return JMessageModule.allConversations();
   }
 }

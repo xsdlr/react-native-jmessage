@@ -7,6 +7,15 @@
 //
 
 #import "RCTJMessageModule.h"
+#import <JMessage/JMSGTextContent.h>
+#import <JMessage/JMSGImageContent.h>
+
+@interface RCTJMessageModule () {
+@private
+    NSMutableDictionary *_sendMessageIdDic;
+    NSMutableArray<JMSGConversation*> *_allConversations;
+}
+@end
 
 @implementation RCTJMessageModule
 
@@ -15,6 +24,8 @@ RCT_EXPORT_MODULE()
 - (instancetype)init
 {
     self = [super init];
+    _sendMessageIdDic = @{}.mutableCopy;
+    _allConversations = @[].mutableCopy;
     if (self) {
         self.appKey = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"JiguangAppKey"];
         self.masterSecret = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"JiguangMasterSecret"];
@@ -59,6 +70,11 @@ RCT_EXPORT_MODULE()
 //MARK: 通知相关
 - (void)onSendMessageResponse:(JMSGMessage *)message error:(NSError *)error {
     if (!error) {
+        RCTPromiseResolveBlock resolve = [_sendMessageIdDic objectForKey:message.msgId];
+        if (resolve) {
+            resolve([self toDictoryWithMessage:message]);
+            [_sendMessageIdDic removeObjectForKey:message.msgId];
+        }
         [self sendEventWithName:@"onSendMessage"
                            body:[self toDictoryWithMessage:message]];
     }
@@ -128,11 +144,12 @@ RCT_EXPORT_METHOD(sendSingleMessage
                   :(NSString*)username
                   :(NSString*)type
                   :(NSDictionary*)data
+                  :(NSTimeInterval)timeout
                   :(RCTPromiseResolveBlock)resolve
                   :(RCTPromiseRejectBlock)reject) {
     if(!username || !type || !data) {
         NSError *error = [[NSError alloc] initWithDomain:@""
-                                                    code:kJMSGErrorSDKMessageNotPrepared
+                                                    code:kJMSGErrorRNMessageNotPrepared
                                                 userInfo:@{NSLocalizedDescriptionKey: @"消息参数错误"
                                                            }];
         reject([@(error.code) stringValue], error.localizedDescription, error);
@@ -142,10 +159,35 @@ RCT_EXPORT_METHOD(sendSingleMessage
                               isSingle:@YES
                            contentType:type
                                   data:data
+                               timeout:timeout
                                resolve:resolve
                                 reject:reject];
 }
 
+RCT_EXPORT_METHOD(allConversations
+                  :(RCTPromiseResolveBlock)resolve
+                  :(RCTPromiseRejectBlock)reject) {
+    [JMSGConversation allConversations:^(id resultObject, NSError *error) {
+        if (error) {
+            reject([@(error.code) stringValue], error.localizedDescription, error);
+            return;
+        }
+        NSArray<JMSGConversation*> *conversations = resultObject;
+        NSMutableArray *result = [NSMutableArray array];
+        for (JMSGConversation *conversation in conversations) {
+            NSString *type = [self toStringWithConversationType:conversation.conversationType];
+            [conversation avatarData:^(NSData *data, NSString *objectId, NSError *error) {
+                [result addObject:@{@"type": type,
+                                    @"title": OPTION_NULL(conversation.title),
+                                    @"laseMessage": OPTION_NULL(conversation.latestMessageContentText),
+                                    @"unreadCount": OPTION_NULL(conversation.unreadCount),
+                                    @"avatar": data ? [data base64EncodedStringWithOptions:NSDataBase64Encoding64CharacterLineLength] : [NSNull null]
+                                    }];
+                if(result.count == conversations.count) resolve(result);
+            }];
+        }
+    }];
+}
 
 //MARK: 私有方法
 - (NSString *) toStringWithConversationType:(JMSGConversationType) type {
@@ -188,15 +230,37 @@ RCT_EXPORT_METHOD(sendSingleMessage
 }
 
 - (NSDictionary *)toDictoryWithMessage:(JMSGMessage *)message {
+    
     return @{@"msgId": message.msgId,
              @"serverMessageId": OPTION_NULL(message.serverMessageId),
-             @"fromType": OPTION_NULL(message.fromType),
-             @"fromName": OPTION_NULL(message.fromName),
+             @"from": @{@"type": OPTION_NULL(message.fromType),
+                        @"name":message.fromUser.username,
+                        @"nickname": message.fromUser.nickname,
+                        },
+             @"target": [self getTargetWithMessage:message],
              @"timestamp": message.timestamp,
-             @"targetType": [self toStringWithConversationType:message.targetType],
              @"contentType": [self toStringWithContentType:message.contentType],
              @"content": [self toDictoryWithJsonString:[message.content toJsonString]]
              };
+}
+
+- (NSDictionary*) getTargetWithMessage:(JMSGMessage *)message {
+    NSString *type = [self toStringWithConversationType:message.targetType];
+    if (message.targetType == kJMSGConversationTypeSingle) {
+        JMSGUser *target = message.target;
+        return @{@"type": type,
+                 @"name": OPTION_NULL(target.username),
+                 @"nickname": OPTION_NULL(target.nickname),
+                 };
+    } else if(message.targetType == kJMSGConversationTypeGroup) {
+        JMSGGroup *target = message.target;
+        return @{@"type": type,
+                 @"name": OPTION_NULL(target.name),
+                 @"displayName": OPTION_NULL(target.displayName)
+                 };
+    } else {
+        return @{};
+    }
 }
 
 /**
@@ -213,33 +277,67 @@ RCT_EXPORT_METHOD(sendSingleMessage
                              isSingle:(BOOL)isSingle
                           contentType:(NSString*)type
                                  data:(NSDictionary*)data
+                              timeout:(NSTimeInterval)timeout
                               resolve:(RCTPromiseResolveBlock)resolve
                                reject:(RCTPromiseRejectBlock)reject {
     if ([type caseInsensitiveCompare:@"Text"] == NSOrderedSame) {
-        NSString *content = [data valueForKey:@"text"];
-        if (!content) {
+        NSString *text = [data valueForKey:@"text"];
+        if (!text) {
             NSError *error = [[NSError alloc] initWithDomain:@""
-                                                        code:kJMSGErrorSDKParamMessageNil
+                                                        code:kJMSGRNErrorParamMessageNil
                                                     userInfo:@{NSLocalizedDescriptionKey: @"空消息内容"
                                                                }];
             reject([@(error.code) stringValue], error.localizedDescription, error);
             return;
         }
-        [self createConversationIsSingle:isSingle nameOrGID:name completionHandler:^(id resultObject, NSError *error) {
+        [self createConversationIsSingle:isSingle
+                               nameOrGID:name
+                       completionHandler:^(id resultObject, NSError *error) {
             if (!error) {
                 JMSGConversation *conversation = resultObject;
-                [conversation sendTextMessage:content];
-                resolve(nil);
+                JMSGMessage *message = [conversation createMessageWithContent:[[JMSGTextContent alloc] initWithText:text]];
+                [self nativeSendMessageWithConversation:conversation
+                                                message:message
+                                                timeout:timeout
+                                                resolve:resolve
+                                                 reject:reject];
             } else {
                 reject([@(error.code) stringValue], error.localizedDescription, error);
             }
         }];
     } else if ([type caseInsensitiveCompare:@"Image"] == NSOrderedSame) {
         NSString *imageURL = [data valueForKey:@"image"];
+        NSData *imageData = [NSData dataWithContentsOfFile:imageURL];
+        if (!imageData) {
+            NSError *error = [[NSError alloc] initWithDomain:@""
+                                                        code:kJMSGRNErrorParamMessageNil
+                                                    userInfo:@{NSLocalizedDescriptionKey: @"图片地址错误"
+                                                               }];
+            reject([@(error.code) stringValue], error.localizedDescription, error);
+            return;
+        }
+        [self createConversationIsSingle:isSingle
+                               nameOrGID:name
+                       completionHandler:^(id resultObject, NSError *error) {
+            if (!error) {
+                JMSGConversation *conversation = resultObject;
+                [conversation createMessageAsyncWithImageContent:[[JMSGImageContent alloc] initWithImageData:imageData]
+                                               completionHandler:^(id resultObject, NSError *error) {
+                    JMSGMessage *message = resultObject;
+                    [self nativeSendMessageWithConversation:conversation
+                                                    message:message
+                                                    timeout:timeout
+                                                    resolve:resolve
+                                                     reject:reject];
+                }];
+            } else {
+                reject([@(error.code) stringValue], error.localizedDescription, error);
+            }
+        }];
         NSLog(@"%@", imageURL);
     } else {
         NSError *error = [[NSError alloc] initWithDomain:@""
-                                                    code:kJMSGErrorSDKMessageProtocolContentTypeNotSupport
+                                                    code:kJMSGErrorRNMessageProtocolContentTypeNotSupport
                                                 userInfo:@{NSLocalizedDescriptionKey: @"暂时不支持文字与图片之外的消息类型"
                                                            }];
         reject([@(error.code) stringValue], error.localizedDescription, error);
@@ -261,5 +359,34 @@ RCT_EXPORT_METHOD(sendSingleMessage
     } else {
         [JMSGConversation createGroupConversationWithGroupId:name completionHandler:handler];
     }
+}
+
+/**
+ native发送消息
+
+ @param conversation 会话
+ @param message 消息
+ @param timeout 发送超时时间
+ @param resolve 成功回调
+ @param reject 失败回调
+ */
+- (void) nativeSendMessageWithConversation:(JMSGConversation*)conversation
+                                   message:(JMSGMessage*)message
+                                   timeout:(NSTimeInterval)timeout
+                              resolve:(RCTPromiseResolveBlock)resolve
+                               reject:(RCTPromiseRejectBlock)reject {
+    NSString *msgId = message.msgId;
+    [_sendMessageIdDic setValue:resolve forKey:msgId];
+    [conversation sendMessage:message];
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, timeout * NSEC_PER_SEC), dispatch_get_main_queue(), ^(void){
+        if ([_sendMessageIdDic valueForKey:msgId]) {
+            [_sendMessageIdDic removeObjectForKey:msgId];
+            NSError *error = [[NSError alloc] initWithDomain:@""
+                                                        code:kJMSGRNErrorMessageTimeout
+                                                    userInfo:@{NSLocalizedDescriptionKey: @"发送消息超时"
+                                                               }];
+            reject([@(error.code) stringValue], error.localizedDescription, error);
+        }
+    });
 }
 @end
