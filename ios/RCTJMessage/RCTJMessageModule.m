@@ -13,7 +13,7 @@
 @interface RCTJMessageModule () {
 @private
     NSMutableDictionary *_sendMessageIdDic;
-    NSMutableArray<JMSGConversation*> *_allConversations;
+    NSMutableDictionary<NSString*, JMSGConversation*> *_allConversations;
 }
 @end
 
@@ -25,7 +25,7 @@ RCT_EXPORT_MODULE()
 {
     self = [super init];
     _sendMessageIdDic = @{}.mutableCopy;
-    _allConversations = @[].mutableCopy;
+    _allConversations = @{}.mutableCopy;
     if (self) {
         self.appKey = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"JiguangAppKey"];
         self.masterSecret = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"JiguangMasterSecret"];
@@ -173,19 +173,51 @@ RCT_EXPORT_METHOD(allConversations
             return;
         }
         NSArray<JMSGConversation*> *conversations = resultObject;
+        [_allConversations removeAllObjects];
         NSMutableArray *result = [NSMutableArray array];
         for (JMSGConversation *conversation in conversations) {
             NSString *type = [self toStringWithConversationType:conversation.conversationType];
             [conversation avatarData:^(NSData *data, NSString *objectId, NSError *error) {
-                [result addObject:@{@"type": type,
+                NSString *cid = [[[NSUUID UUID] UUIDString] stringByReplacingOccurrencesOfString:@"-" withString:@""].lowercaseString;
+                [result addObject:@{@"id": cid,
+                                    @"type": type,
                                     @"title": OPTION_NULL(conversation.title),
                                     @"laseMessage": OPTION_NULL(conversation.latestMessageContentText),
                                     @"unreadCount": OPTION_NULL(conversation.unreadCount),
                                     @"avatar": data ? [data base64EncodedStringWithOptions:NSDataBase64Encoding64CharacterLineLength] : [NSNull null]
                                     }];
+                [_allConversations setObject:conversation forKey:cid];
                 if(result.count == conversations.count) resolve(result);
             }];
         }
+    }];
+}
+
+RCT_EXPORT_METHOD(historyMessages
+                  :(NSString*)cid
+                  :(NSNumber*__nonnull) offset
+                  :(NSNumber*__nonnull)limit
+                  :(RCTPromiseResolveBlock)resolve
+                  :(RCTPromiseRejectBlock)reject) {
+    if(!cid) {
+        NSError *error = [[NSError alloc] initWithDomain:@""
+                                                    code:kJMSGErrorRNParamConversationIdEmpty
+                                                userInfo:@{NSLocalizedDescriptionKey: @"空会话id"
+                                                           }];
+        reject([@(error.code) stringValue], error.localizedDescription, error);
+        return;
+    }
+    [self detectConversationValidById:cid completionHandler:^(id resultObject, NSError *error) {
+        if (error) {
+            reject([@(error.code) stringValue], error.localizedDescription, error);
+            return;
+        }
+        JMSGConversation *conversation = resultObject;
+        NSMutableArray<NSDictionary*> *result = @[].mutableCopy;
+        for (JMSGMessage *message in [conversation messageArrayFromNewestWithOffset:offset limit:limit]) {
+            [result addObject:[self toDictoryWithMessage:message]];
+        }
+        resolve(result);
     }];
 }
 
@@ -388,5 +420,25 @@ RCT_EXPORT_METHOD(allConversations
             reject([@(error.code) stringValue], error.localizedDescription, error);
         }
     });
+}
+
+/**
+ 检测会话有效性
+
+ @param cid 会话id
+ @param completionHandler 回调
+ */
+- (void) detectConversationValidById:(NSString*)cid
+                        completionHandler:(JMSGCompletionHandler JMSG_NULLABLE)handler {
+    JMSGConversation *conversation = [_allConversations objectForKey:cid];
+    if (conversation) {
+        handler(conversation, nil);
+        return;
+    }
+    NSError *error = [[NSError alloc] initWithDomain:@""
+                                                code:kJMSGErrorRNParamConversationInvalid
+                                            userInfo:@{NSLocalizedDescriptionKey: @"会话无效"
+                                                       }];
+    handler(nil, error);
 }
 @end

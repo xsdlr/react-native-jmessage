@@ -4,7 +4,7 @@ import {
   NativeEventEmitter,
 } from 'react-native';
 import Base64 from 'base-64';
-import {requsetMediaURL} from './lib/restApi';
+import { requsetMediaURL } from './lib/restApi';
 import camelcaseKeys from 'camelcase-keys';
 
 const JMessageModule = NativeModules.JMessageModule;
@@ -18,22 +18,13 @@ export default class JMessage {
 
   static addReceiveMessageListener(cb) {
     return JMessage.eventEmitter.addListener('onReceiveMessage', (_message) => {
-      const message = camelcaseKeys(_message, {deep: true});
-      const {content = {}} = message;
-      if (content.mediaId) {
-        requsetMediaURL(JMessage.authKey, content.mediaId).then((data) => {
-          message.content.mediaLink = data.url;
-          cb(message);
-        }).catch(() => cb(message));
-      } else {
-        cb(message);
-      }
+      supportMessageMediaURL(_message).then((message) => cb(message));
     });
   }
+
   static addSendMessageListener(cb) {
     return JMessage.eventEmitter.addListener('onSendMessage', (_message) => {
-      const message = camelcaseKeys(_message, {deep: true});
-      cb(message);
+      suppleMessgaeMediaURL(_message).then((message) => cb(message));
     });
   }
   static removeAllListener(eventNames = JMessage.defaultEventNames) {
@@ -60,4 +51,23 @@ export default class JMessage {
   static allConversations() {
     return JMessageModule.allConversations();
   }
+  static historyMessages(cid, offset=0, limit=0) {
+    return JMessageModule.historyMessages(cid, offset, limit)
+      .then(messages => Promise.all(messages.map((message) => supportMessageMediaURL(message))));
+  }
 }
+
+const supportMessageMediaURL = (_message) => {
+  return new Promise((resolve, reject) => {
+    const message = camelcaseKeys(_message, {deep: true});
+    const {content = {}} = message;
+    if (content.mediaId) {
+      requsetMediaURL(JMessage.authKey, content.mediaId).then((data) => {
+        message.content.mediaLink = data.url;
+        resolve(message);
+      }).catch(() => resolve(message));
+    } else {
+      resolve(message);
+    }
+  });
+};

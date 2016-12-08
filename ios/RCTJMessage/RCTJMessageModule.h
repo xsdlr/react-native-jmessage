@@ -29,6 +29,11 @@ typedef NS_ENUM(NSInteger, JMSGRNErrorCode) {
     kJMSGErrorRNMessageProtocolContentTypeNotSupport = 1865009,
     /// 发送消息超时
     kJMSGRNErrorMessageTimeout = 1865010,
+    // ------------------------ Conversation (1866xxx)
+    /// 空会话id
+    kJMSGErrorRNParamConversationIdEmpty = 1866001,
+    /// 会话无效
+    kJMSGErrorRNParamConversationInvalid
 };
 
 @property NSString* appKey;
