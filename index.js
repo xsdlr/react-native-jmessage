@@ -6,6 +6,7 @@ import {
 import Base64 from 'base-64';
 import { requsetMediaURL } from './lib/restApi';
 import camelcaseKeys from 'camelcase-keys';
+import _ from 'lodash';
 
 const JMessageModule = NativeModules.JMessageModule;
 
@@ -17,18 +18,26 @@ export default class JMessage {
   static defaultEventNames = ['onReceiveMessage', 'onSendMessage'];
 
   static addReceiveMessageListener(cb) {
-    return JMessage.eventEmitter.addListener('onReceiveMessage', (_message) => {
+    return JMessage.eventEmitter.addListener('onReceiveMessage', (message) => {
+      const _message = formatMessage(message);
+      // console.log("JMessage.authKey", JMessageModule.AppKey, JMessageModule.MasterSecret);
       supportMessageMediaURL(_message).then((message) => cb(message));
     });
   }
 
   static addSendMessageListener(cb) {
-    return JMessage.eventEmitter.addListener('onSendMessage', (_message) => {
-      suppleMessgaeMediaURL(_message).then((message) => cb(message));
+    return JMessage.eventEmitter.addListener('onSendMessage', (message) => {
+      const _message = formatMessage(message);
+      supportMessageMediaURL(_message).then((message) => cb(message));
     });
   }
   static removeAllListener(eventNames = JMessage.defaultEventNames) {
     JMessage.eventEmitter.removeAllListeners(eventNames);
+  }
+  static init() {
+    if (Platform.OS === 'android') {
+      JMessageModule.setupJMessage();
+    }
   }
   static login(username, password) {
     return JMessageModule.login(username, password).then((info) => {
@@ -45,8 +54,8 @@ export default class JMessage {
   static logout() {
     return JMessageModule.logout();
   }
-  static sendSingleMessage({name, type, data={}, timeout=30000}) {
-    return JMessageModule.sendSingleMessage(name, type, data, timeout);
+  static sendSingleMessage({name, type, data={}}) {
+    return JMessageModule.sendSingleMessage(name, type, data);
   }
   static allConversations() {
     return JMessageModule.allConversations();
@@ -57,9 +66,8 @@ export default class JMessage {
   }
 }
 
-const supportMessageMediaURL = (_message) => {
+const supportMessageMediaURL = (message) => {
   return new Promise((resolve, reject) => {
-    const message = camelcaseKeys(_message, {deep: true});
     const {content = {}} = message;
     if (content.mediaId) {
       requsetMediaURL(JMessage.authKey, content.mediaId).then((data) => {
@@ -70,4 +78,15 @@ const supportMessageMediaURL = (_message) => {
       resolve(message);
     }
   });
+};
+
+const formatMessage = (message) => {
+  const _message = _.cloneDeep(message)
+  try {
+    _message.content = JSON.parse(_message.content);
+  } catch (ex) {
+    _message.contentJSONString = _message.content;
+    _message.content = {};
+  }
+  return camelcaseKeys(_message, {deep: true});
 };
