@@ -75,8 +75,6 @@ RCT_EXPORT_MODULE()
             resolve([self toDictoryWithMessage:message]);
             [_sendMessageIdDic removeObjectForKey:message.msgId];
         }
-        [self sendEventWithName:@"onSendMessage"
-                           body:[self toDictoryWithMessage:message]];
     }
 }
 
@@ -116,6 +114,7 @@ RCT_EXPORT_METHOD(login:(NSString *)username
                       @"nickname": OPTION_NULL(user.nickname),
                       @"avatar": OPTION_NULL(user.avatar),
                       @"gender": @(user.gender),
+                      @"genderDesc": [self toStringWithUserGender:user.gender],
                       @"birthday": OPTION_NULL(user.birthday),
                       @"region": OPTION_NULL(user.region),
                       @"signature": OPTION_NULL(user.signature),
@@ -144,7 +143,6 @@ RCT_EXPORT_METHOD(sendSingleMessage
                   :(NSString*)username
                   :(NSString*)type
                   :(NSDictionary*)data
-                  :(NSTimeInterval)timeout
                   :(RCTPromiseResolveBlock)resolve
                   :(RCTPromiseRejectBlock)reject) {
     if(!username || !type || !data) {
@@ -159,7 +157,7 @@ RCT_EXPORT_METHOD(sendSingleMessage
                               isSingle:@YES
                            contentType:type
                                   data:data
-                               timeout:timeout
+                               timeout:0
                                resolve:resolve
                                 reject:reject];
 }
@@ -175,12 +173,17 @@ RCT_EXPORT_METHOD(allConversations
         NSArray<JMSGConversation*> *conversations = resultObject;
         [_allConversations removeAllObjects];
         NSMutableArray *result = [NSMutableArray array];
+        if (conversations.count == 0) {
+            resolve(result);
+            return;
+        }
         for (JMSGConversation *conversation in conversations) {
-            NSString *type = [self toStringWithConversationType:conversation.conversationType];
+            NSString *typeDesc = [self toStringWithConversationType:conversation.conversationType];
             [conversation avatarData:^(NSData *data, NSString *objectId, NSError *error) {
                 NSString *cid = [[[NSUUID UUID] UUIDString] stringByReplacingOccurrencesOfString:@"-" withString:@""].lowercaseString;
                 [result addObject:@{@"id": cid,
-                                    @"type": type,
+                                    @"type": @(conversation.conversationType),
+                                    @"typeDesc": typeDesc,
                                     @"title": OPTION_NULL(conversation.title),
                                     @"laseMessage": OPTION_NULL(conversation.latestMessageContentText),
                                     @"unreadCount": OPTION_NULL(conversation.unreadCount),
@@ -199,6 +202,7 @@ RCT_EXPORT_METHOD(historyMessages
                   :(NSNumber*__nonnull)limit
                   :(RCTPromiseResolveBlock)resolve
                   :(RCTPromiseRejectBlock)reject) {
+    NSNumber* _limit = limit <= 0 ? nil : limit;
     if(!cid) {
         NSError *error = [[NSError alloc] initWithDomain:@""
                                                     code:kJMSGErrorRNParamConversationIdEmpty
@@ -214,7 +218,7 @@ RCT_EXPORT_METHOD(historyMessages
         }
         JMSGConversation *conversation = resultObject;
         NSMutableArray<NSDictionary*> *result = @[].mutableCopy;
-        for (JMSGMessage *message in [conversation messageArrayFromNewestWithOffset:offset limit:limit]) {
+        for (JMSGMessage *message in [conversation messageArrayFromNewestWithOffset:offset limit:_limit]) {
             [result addObject:[self toDictoryWithMessage:message]];
         }
         resolve(result);
@@ -222,6 +226,19 @@ RCT_EXPORT_METHOD(historyMessages
 }
 
 //MARK: 私有方法
+- (NSString *) toStringWithUserGender:(JMSGUserGender) gender {
+    switch (gender) {
+        case kJMSGUserGenderUnknown:
+            return @"Unknown";
+        case kJMSGUserGenderMale:
+            return @"Male";
+        case kJMSGUserGenderFemale:
+            return @"Female";
+        default:
+            return [NSNull null];
+    }
+}
+
 - (NSString *) toStringWithConversationType:(JMSGConversationType) type {
     switch (type) {
         case kJMSGConversationTypeSingle:
@@ -266,27 +283,30 @@ RCT_EXPORT_METHOD(historyMessages
     return @{@"msgId": message.msgId,
              @"serverMessageId": OPTION_NULL(message.serverMessageId),
              @"from": @{@"type": OPTION_NULL(message.fromType),
-                        @"name":message.fromUser.username,
-                        @"nickname": message.fromUser.nickname,
+                        @"name":OPTION_NULL(message.fromUser.username),
+                        @"nickname": OPTION_NULL(message.fromUser.nickname),
                         },
              @"target": [self getTargetWithMessage:message],
              @"timestamp": message.timestamp,
-             @"contentType": [self toStringWithContentType:message.contentType],
-             @"content": [self toDictoryWithJsonString:[message.content toJsonString]]
+             @"contentType": @(message.contentType),
+             @"contentTypeDesc": [self toStringWithContentType:message.contentType],
+             @"content": OPTION_NULL([message.content toJsonString])
              };
 }
 
 - (NSDictionary*) getTargetWithMessage:(JMSGMessage *)message {
-    NSString *type = [self toStringWithConversationType:message.targetType];
+    NSString *typeDesc = [self toStringWithConversationType:message.targetType];
     if (message.targetType == kJMSGConversationTypeSingle) {
         JMSGUser *target = message.target;
-        return @{@"type": type,
+        return @{@"type": @(message.targetType),
+                 @"typeDesc": typeDesc,
                  @"name": OPTION_NULL(target.username),
                  @"nickname": OPTION_NULL(target.nickname),
                  };
     } else if(message.targetType == kJMSGConversationTypeGroup) {
         JMSGGroup *target = message.target;
-        return @{@"type": type,
+        return @{@"type": @(message.targetType),
+                 @"typeDesc": typeDesc,
                  @"name": OPTION_NULL(target.name),
                  @"displayName": OPTION_NULL(target.displayName)
                  };
@@ -410,6 +430,7 @@ RCT_EXPORT_METHOD(historyMessages
     NSString *msgId = message.msgId;
     [_sendMessageIdDic setValue:resolve forKey:msgId];
     [conversation sendMessage:message];
+    if (timeout <= 0) return;
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, timeout * NSEC_PER_SEC), dispatch_get_main_queue(), ^(void){
         if ([_sendMessageIdDic valueForKey:msgId]) {
             [_sendMessageIdDic removeObjectForKey:msgId];

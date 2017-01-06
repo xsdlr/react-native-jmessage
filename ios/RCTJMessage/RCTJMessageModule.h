@@ -26,9 +26,9 @@ typedef NS_ENUM(NSInteger, JMSGRNErrorCode) {
     /// 消息不符合发送的基本条件检查
     kJMSGErrorRNMessageNotPrepared = 1865003,
     /// 收到不支持消息内容类型(目前只支持文本和图片)
-    kJMSGErrorRNMessageProtocolContentTypeNotSupport = 1865009,
+    kJMSGErrorRNMessageProtocolContentTypeNotSupport = 1865100,
     /// 发送消息超时
-    kJMSGRNErrorMessageTimeout = 1865010,
+    kJMSGRNErrorMessageTimeout = 1865101,
     // ------------------------ Conversation (1866xxx)
     /// 空会话id
     kJMSGErrorRNParamConversationIdEmpty = 1866001,
