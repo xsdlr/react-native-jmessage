@@ -29,6 +29,7 @@ RCT_EXPORT_MODULE()
     if (self) {
         self.appKey = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"JiguangAppKey"];
         self.masterSecret = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"JiguangMasterSecret"];
+        self.appChannel = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"JiguangAppChannel"];
     }
     return self;
 }
@@ -43,13 +44,13 @@ RCT_EXPORT_MODULE()
 }
 
 + (void)setupJMessage:(NSDictionary *)launchOptions
-              channel:(NSString *)channel
      apsForProduction:(BOOL)isProduction
              category:(NSSet *)category {
     NSString *appKey = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"JiguangAppKey"];
+    NSString *appChannel = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"JiguangAppChannel"];
     [JMessage setupJMessage:launchOptions
                      appKey:appKey
-                    channel:channel
+                    channel:appChannel
            apsForProduction:isProduction
                    category:category];
 }

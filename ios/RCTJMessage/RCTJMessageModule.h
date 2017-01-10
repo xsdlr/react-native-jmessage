@@ -37,10 +37,10 @@ typedef NS_ENUM(NSInteger, JMSGRNErrorCode) {
 };
 
 @property NSString* appKey;
+@property NSString* appChannel;
 @property NSString* masterSecret;
 
 + (void)setupJMessage:(NSDictionary *)launchOptions
-              channel:(NSString *)channel
      apsForProduction:(BOOL)isProduction
              category:(NSSet *)category;
 
