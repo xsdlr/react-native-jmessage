@@ -11,7 +11,6 @@
 
 #import <Foundation/Foundation.h>
 #import <JMessage/JMSGConstants.h>
-#import <JMessage/JPUSHService.h>
 #import <JMessage/JMSGUser.h>
 #import <JMessage/JMSGGroup.h>
 #import <JMessage/JMSGMessage.h>
@@ -35,6 +34,14 @@
 @protocol JMessageDelegate;
 @class JMSGConversation;
 
+extern NSString *const kJMSGNetworkIsConnectingNotification;          // 正在连接中
+extern NSString *const kJMSGNetworkDidSetupNotification;              // 建立连接
+extern NSString *const kJMSGNetworkDidCloseNotification;              // 关闭连接
+extern NSString *const kJMSGNetworkDidRegisterNotification;           // 注册成功
+extern NSString *const kJMSGNetworkFailedRegisterNotification;        // 注册失败
+extern NSString *const kJMSGNetworkDidLoginNotification;              // 连接成功
+extern NSString *const kJMSGNetworkDidReceiveMessageNotification;     // 收到消息
+extern NSString *const kJMSGServiceErrorNotification;                 // 错误提示
 
 /*!
  * JMessage核心头文件
@@ -44,10 +51,10 @@
 @interface JMessage : NSObject
 
 /*! JMessage SDK 版本号。用于展示 SDK 的版本信息 */
-#define JMESSAGE_VERSION @"2.2.1"
+#define JMESSAGE_VERSION @"3.0.0"
 
 /*! JMessage SDK 构建ID. 每次构建都会增加 */
-#define JMESSAGE_BUILD 13
+#define JMESSAGE_BUILD 132
 
 /*! API Version - int for program logic. SDK API 有变更时会增加 */
 extern NSInteger const JMESSAGE_API_VERSION;
@@ -62,9 +69,7 @@ extern NSInteger const JMESSAGE_API_VERSION;
  * @param isProduction     是否为生产模式
  * @param category         iOS8新增通知快捷按钮参数
  *
- * @discussion 此方法必须被调用, 以初始化 JMessage SDK
- *
- * 如果未调用此方法, 本 SDK 的所有功能将不可用.
+ * @discussion 此方法被[setupJMessage:appKey:channel:apsForProduction:category:messageRoaming:]方法取代
  */
 + (void)setupJMessage:(NSDictionary *)launchOptions
                appKey:(NSString *)appKey
@@ -222,6 +227,24 @@ extern NSInteger const JMESSAGE_API_VERSION;
  * 建议开发者在 SDK 完全启动之后，再调用此接口获取数据
  */
 + (void)blackList:(JMSGCompletionHandler)handler;
+
+/*!
+ * @abstract 注册远程推送
+ * @param types 通知类型
+ * @param categories 类别组
+ * @discussion 此方法必须被调用，如果有集成JPush或其他远程推送注册方法，请不要再调用此方法
+ *
+ */
++ (void)registerForRemoteNotificationTypes:(NSUInteger)types
+                                categories:(NSSet *)categories;
+
+/*!
+ * @abstract 注册DeviceToken
+ * @param deviceToken 从注册推送回调中拿到的DeviceToken
+ * @discussion 此方法必须被调用
+ *
+ */
++ (void)registerDeviceToken:(NSData *)deviceToken;
 
 @end
 
