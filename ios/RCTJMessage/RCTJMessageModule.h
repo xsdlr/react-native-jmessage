@@ -18,6 +18,9 @@
 @interface RCTJMessageModule : RCTEventEmitter <RCTBridgeModule, JMessageDelegate>
 
 typedef NS_ENUM(NSInteger, JMSGRNErrorCode) {
+    // ------------------------ Message (1863xxx)
+    /// 用户未登录
+    kJMSGRNErrorSDKUserNotLogin = 1863004,
     // ------------------------ Message (1865xxx)
     /// 无效的消息内容
     kJMSGRNErrorParamContentInvalid = 1865001,

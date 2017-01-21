@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		CD3B6D2F1DEEBDD70011B9F5 /* RCTJPushModule.m in Sources */ = {isa = PBXBuildFile; fileRef = CD3B6D2E1DEEBDD70011B9F5 /* RCTJPushModule.m */; };
 		CD3B6D321DEEBFAD0011B9F5 /* RCTJMessageModule.m in Sources */ = {isa = PBXBuildFile; fileRef = CD3B6D311DEEBFAD0011B9F5 /* RCTJMessageModule.m */; };
 		CD3B6D391DEECFBA0011B9F5 /* NSObject+KVC.m in Sources */ = {isa = PBXBuildFile; fileRef = CD3B6D381DEECFBA0011B9F5 /* NSObject+KVC.m */; };
 		CD92EFC71DE6B2DC00AC6A25 /* JMessage.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CD92EFC61DE6B2DC00AC6A25 /* JMessage.framework */; };
@@ -27,8 +26,6 @@
 
 /* Begin PBXFileReference section */
 		CD252CF21DE56CA700EFB429 /* libRCTJMessage.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libRCTJMessage.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		CD3B6D2D1DEEBDD70011B9F5 /* RCTJPushModule.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RCTJPushModule.h; sourceTree = "<group>"; };
-		CD3B6D2E1DEEBDD70011B9F5 /* RCTJPushModule.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RCTJPushModule.m; sourceTree = "<group>"; };
 		CD3B6D301DEEBFAD0011B9F5 /* RCTJMessageModule.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RCTJMessageModule.h; sourceTree = "<group>"; };
 		CD3B6D311DEEBFAD0011B9F5 /* RCTJMessageModule.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RCTJMessageModule.m; sourceTree = "<group>"; };
 		CD3B6D371DEECFBA0011B9F5 /* NSObject+KVC.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSObject+KVC.h"; sourceTree = "<group>"; };
@@ -68,8 +65,6 @@
 			isa = PBXGroup;
 			children = (
 				CD92EFC61DE6B2DC00AC6A25 /* JMessage.framework */,
-				CD3B6D2D1DEEBDD70011B9F5 /* RCTJPushModule.h */,
-				CD3B6D2E1DEEBDD70011B9F5 /* RCTJPushModule.m */,
 				CD3B6D301DEEBFAD0011B9F5 /* RCTJMessageModule.h */,
 				CD3B6D311DEEBFAD0011B9F5 /* RCTJMessageModule.m */,
 				CD3B6D371DEECFBA0011B9F5 /* NSObject+KVC.h */,
@@ -135,7 +130,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				CD3B6D2F1DEEBDD70011B9F5 /* RCTJPushModule.m in Sources */,
 				CD3B6D321DEEBFAD0011B9F5 /* RCTJMessageModule.m in Sources */,
 				CD3B6D391DEECFBA0011B9F5 /* NSObject+KVC.m in Sources */,
 			);
