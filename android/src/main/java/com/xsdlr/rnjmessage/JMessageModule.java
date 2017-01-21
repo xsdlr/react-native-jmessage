@@ -16,15 +16,16 @@ import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 import javax.annotation.Nullable;
-import cn.jpush.android.api.JPushInterface;
+
+import cn.jiguang.api.JCoreInterface;
 import cn.jpush.im.android.api.JMessageClient;
+import cn.jpush.im.android.api.content.EventNotificationContent;
 import cn.jpush.im.android.api.content.ImageContent;
 import cn.jpush.im.android.api.content.MessageContent;
 import cn.jpush.im.android.api.content.TextContent;
@@ -62,7 +63,6 @@ public class JMessageModule extends ReactContextBaseJavaModule {
         constants.put("MasterSecret", getMetaData("JPUSH_MASTER_SECRET"));
         return constants;
     }
-
     /**
      * 初始化方法
      */
@@ -70,9 +70,8 @@ public class JMessageModule extends ReactContextBaseJavaModule {
     public void setupJMessage() {
         JMessageClient.init(this.getReactApplicationContext());
         JMessageClient.registerEventReceiver(this);
-        JPushInterface.setDebugMode(JMessageModule.isDebug);
+        JCoreInterface.setDebugMode(JMessageModule.isDebug);
     }
-
     /**
      * 获得注册id
      * @param promise
@@ -84,10 +83,20 @@ public class JMessageModule extends ReactContextBaseJavaModule {
             promise.reject(JMessageException.ACTIVITY_NOT_EXIST.getCode(), JMessageException.ACTIVITY_NOT_EXIST);
             return;
         }
-        String id = JPushInterface.getRegistrationID(context);
+        String id = JCoreInterface.getRegistrationID(context);
         promise.resolve(id);
     }
-
+    /**
+     * 用户是否登录
+     * @param promise
+     */
+    @ReactMethod
+    public void isLoggedIn(final Promise promise) {
+        UserInfo info = JMessageClient.getMyInfo();
+        System.out.println(info);
+        boolean isLoggedIn = info != null && info.getUserID() != 0;
+        promise.resolve(isLoggedIn);
+    }
     /**
      * 登录
      * @param username  用户名
@@ -101,14 +110,13 @@ public class JMessageModule extends ReactContextBaseJavaModule {
             @Override
             public void gotResult(int responseCode, String loginDesc) {
                 if (responseCode == 0) {
-                    _this.getUserInfo(promise);
+                    _this.myInfo(promise);
                 } else {
                     promise.reject(String.valueOf(responseCode), loginDesc);
                 }
             }
         });
     }
-
     /**
      * 注销
      */
@@ -116,16 +124,16 @@ public class JMessageModule extends ReactContextBaseJavaModule {
     public void logout() {
         JMessageClient.logout();
     }
-
     /**
      * 获得用户信息
      * @param promise
      */
     @ReactMethod
-    public void getUserInfo(final Promise promise) {
+    public void myInfo(final Promise promise) {
         UserInfo info = JMessageClient.getMyInfo();
         if (info == null) {
             promise.reject(null, "获取用户信息失败");
+            return;
         }
         WritableMap result = Arguments.createMap();
         result.putString("username", info.getUserName());
@@ -141,7 +149,6 @@ public class JMessageModule extends ReactContextBaseJavaModule {
         result.putString("noteText", info.getNoteText());
         promise.resolve(result);
     }
-
     /**
      * 发送单聊消息
      * @param username  用户名
@@ -154,7 +161,6 @@ public class JMessageModule extends ReactContextBaseJavaModule {
         Conversation conversation = Conversation.createSingleConversation(username);
         sendMessage(conversation, type, data, promise);
     }
-
     /**
      * 发送群聊消息
      * @param groupId   群号
@@ -175,7 +181,22 @@ public class JMessageModule extends ReactContextBaseJavaModule {
         Conversation conversation = Conversation.createGroupConversation(gid);
         sendMessage(conversation, type, data, promise);
     }
-
+    /**
+     * 根据会话发送消息
+     * @param cid
+     * @param type
+     * @param data
+     * @param promise
+     */
+    @ReactMethod
+    public void sendMessageByCID(String cid, String type, ReadableMap data, final Promise promise) {
+        try {
+            Conversation conversation = getConversation(cid);
+            sendMessage(conversation, type, data, promise);
+        } catch (JMessageException e) {
+            promise.reject(e.getCode(), e.getMessage());
+        }
+    }
     /**
      * 获取会话列表
      * @param promise
@@ -186,15 +207,14 @@ public class JMessageModule extends ReactContextBaseJavaModule {
         conversationStore.clear();
         WritableArray result = Arguments.createArray();
         for (Conversation conversation: conversations) {
-            String cid = UUID.randomUUID().toString().toLowerCase().replace("-", "");
+            String cid = UUID.randomUUID().toString();
             conversationStore.put(cid, conversation);
-            WritableMap conversationMap = tansformToWritableMap(conversation);
+            WritableMap conversationMap = transformToWritableMap(conversation);
             conversationMap.putString("id", cid);
             result.pushMap(conversationMap);
         }
         promise.resolve(result);
     }
-
     /**
      * 获得历史消息
      * @param cid       会话id
@@ -205,22 +225,58 @@ public class JMessageModule extends ReactContextBaseJavaModule {
     @ReactMethod
     public void historyMessages(String cid, Integer offset, Integer limit, final Promise promise) {
         Integer _limit = limit <= 0 ? Integer.MAX_VALUE : limit;
-        if (Utils.isEmpty(cid)) {
-            JMessageException ex = JMessageException.CONVERSATION_ID_EMPTY;
-            promise.reject(ex.getCode(), ex.getMessage());
-            return;
+        try {
+            Conversation conversation = getConversation(cid);
+            WritableArray result = Arguments.createArray();
+            for (Message message: conversation.getMessagesFromNewest(offset, _limit)) {
+                result.pushMap(transformToWritableMap(message));
+            }
+            promise.resolve(result);
+        } catch (JMessageException e) {
+            promise.reject(e.getCode(), e.getMessage());
         }
-        Conversation conversation = conversationStore.get(cid);
-        if (conversation == null) {
-            JMessageException ex = JMessageException.CONVERSATION_INVALID;
-            promise.reject(ex.getCode(), ex.getMessage());
-            return;
+    }
+    /**
+     * 清除未读记录数
+     * @param cid       会话id
+     * @param promise
+     */
+    @ReactMethod
+    public void clearUnreadCount(String cid, final Promise promise) {
+        try {
+            Conversation conversation = getConversation(cid);
+            int unreadCount = conversation.getUnReadMsgCnt();
+            if (conversation.resetUnreadCount()) {
+                promise.resolve(unreadCount);
+            } else {
+                promise.reject("", "");
+            }
+        } catch (JMessageException e) {
+            promise.reject(e.getCode(), e.getMessage());
         }
-        WritableArray result = Arguments.createArray();
-        for (Message message: conversation.getMessagesFromNewest(offset, _limit)) {
-            result.pushMap(tansformToWritableMap(message));
+    }
+    /**
+     * 删除会话
+     * @param cid       会话id
+     * @param promise
+     */
+    @ReactMethod
+    public void removeConversation(String cid, final Promise promise) {
+        try {
+            Conversation conversation = getConversation(cid);
+            switch (conversation.getType()) {
+                case single:
+                    UserInfo userInfo = (UserInfo)conversation.getTargetInfo();
+                    JMessageClient.deleteSingleConversation(userInfo.getUserName());
+                case group:
+                    GroupInfo groupInfo = (GroupInfo)conversation.getTargetInfo();
+                    JMessageClient.deleteGroupConversation(groupInfo.getGroupID());
+            }
+            conversationStore.remove(cid);
+            promise.resolve(null);
+        } catch (JMessageException e) {
+            promise.reject(e.getCode(), e.getMessage());
         }
-        promise.resolve(result);
     }
     /**
      * 接收消息事件监听
@@ -229,10 +285,10 @@ public class JMessageModule extends ReactContextBaseJavaModule {
     public void onEvent(MessageEvent event) {
         Message message = event.getMessage();
         this.getReactApplicationContext().getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
-                .emit("onReceiveMessage", tansformToWritableMap(message));
+                .emit("onReceiveMessage", transformToWritableMap(message));
     }
 
-    private WritableMap tansformToWritableMap(Message message) {
+    private WritableMap transformToWritableMap(Message message) {
         WritableMap result = Arguments.createMap();
         if (message == null) return result;
 
@@ -270,7 +326,7 @@ public class JMessageModule extends ReactContextBaseJavaModule {
         return result;
     }
 
-    private WritableMap tansformToWritableMap(Conversation conversation) {
+    private WritableMap transformToWritableMap(Conversation conversation) {
         WritableMap result = Arguments.createMap();
         File avatar = conversation.getAvatarFile();
         if (avatar != null) {
@@ -283,6 +339,18 @@ public class JMessageModule extends ReactContextBaseJavaModule {
 
         result.putString("laseMessage", getLastMessageContent(conversation));
         result.putInt("unreadCount", conversation.getUnReadMsgCnt());
+        switch (conversation.getType()) {
+            case single:
+                UserInfo userInfo = (UserInfo)conversation.getTargetInfo();
+                result.putString("username", userInfo.getUserName());
+                break;
+            case group:
+                GroupInfo groupInfo = (GroupInfo)conversation.getTargetInfo();
+                result.putDouble("groupId", groupInfo.getGroupID());
+                break;
+            default:
+                break;
+        }
         return result;
     }
 
@@ -459,7 +527,7 @@ public class JMessageModule extends ReactContextBaseJavaModule {
             @Override
             public void gotResult(int responseCode, String responseDesc) {
                 if (responseCode == 0) {
-                    promise.resolve(tansformToWritableMap(message));
+                    promise.resolve(transformToWritableMap(message));
                 } else {
                     promise.reject(String.valueOf(responseCode), responseDesc);
                 }
@@ -467,4 +535,16 @@ public class JMessageModule extends ReactContextBaseJavaModule {
         });
         JMessageClient.sendMessage(message);
     }
+
+    private Conversation getConversation(String cid) throws JMessageException {
+        if (Utils.isEmpty(cid)) {
+            throw  JMessageException.CONVERSATION_ID_EMPTY;
+        }
+        Conversation conversation = conversationStore.get(cid);
+        if (conversation == null) {
+            throw JMessageException.CONVERSATION_INVALID;
+        }
+        return conversation;
+    }
+
 }
