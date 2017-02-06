@@ -152,6 +152,21 @@ RCT_EXPORT_METHOD(login:(NSString *)username
     }];
 }
 /**
+ 注销
+ 
+ */
+RCT_EXPORT_METHOD(logout
+                  :(RCTPromiseResolveBlock)resolve
+                  :(RCTPromiseRejectBlock)reject) {
+    [JMSGUser logout:^(id resultObject, NSError *error) {
+        if (!error) {
+            resolve(resultObject);
+        } else {
+            reject([@(error.code) stringValue], error.localizedDescription, error);
+        }
+    }];
+}
+/**
  获得个人用户信息
  
 */
@@ -178,21 +193,6 @@ RCT_EXPORT_METHOD(myInfo
               @"noteName": OPTION_NULL(user.noteName),
               @"noteText": OPTION_NULL(user.noteText)
               });
-}
-/**
- 获得个人用户信息
- 
- */
-RCT_EXPORT_METHOD(logout
-                  :(RCTPromiseResolveBlock)resolve
-                  :(RCTPromiseRejectBlock)reject) {
-    [JMSGUser logout:^(id resultObject, NSError *error) {
-        if (!error) {
-            resolve(resultObject);
-        } else {
-            reject([@(error.code) stringValue], error.localizedDescription, error);
-        }
-    }];
 }
 /**
  发送单聊消息

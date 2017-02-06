@@ -121,8 +121,9 @@ public class JMessageModule extends ReactContextBaseJavaModule {
      * 注销
      */
     @ReactMethod
-    public void logout() {
+    public void logout(final Promise promise) {
         JMessageClient.logout();
+        promise.resolve(null);
     }
     /**
      * 获得用户信息
