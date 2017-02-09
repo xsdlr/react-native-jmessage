@@ -10,9 +10,9 @@ android {
         versionCode 1
         versionName "1.0"
         manifestPlaceholders = [
-            JIGUANG_APPKEY: ${JIGUANG_APPKEY},	              //JPush的AppKey
-            JGUANG_APPCHANNEL: "developer-default",		      //应用渠道号
-            JIGUANG_MASTER_SECRET: ${JIGUANG_MASTER_SECRET}   //JPush的AppMasterSecret
+            JIGUANG_APPKEY: ${JIGUANG_APPKEY},
+            JGUANG_APPCHANNEL: "developer-default",
+            JIGUANG_MASTER_SECRET: ${JIGUANG_MASTER_SECRET}
         ]
     }
     buildTypes {

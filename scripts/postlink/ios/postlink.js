@@ -17,10 +17,12 @@ var plistPath = glob.sync(path.join(path.dirname(appDelegatePath), "*Info.plist"
 var appDelegateContents = fs.readFileSync(appDelegatePath, "utf8");
 var plistContents = fs.readFileSync(plistPath, "utf8");
 
-addCustomFramework(['JMessage.framework', 'JMessage.framework/jcore-ios-1.1.0.a']);
-addPlistConfig();
-addHeaderImport();
-modifyCode();
+module.exports = function() {
+  addCustomFramework(['JMessage.framework', 'JMessage.framework/jcore-ios-1.1.0.a']);
+  addPlistConfig();
+  addHeaderImport();
+  modifyCode();
+}
 
 function addCustomFramework(fpaths) {
   var pluginPath = '../node_modules/react-native-jmessage/ios/RCTJMessage';
@@ -43,7 +45,7 @@ function addCustomFramework(fpaths) {
 
 function addPlistConfig() {
   if (!plistPath) {
-    console.error("Couldn't find .plist file");
+    console.log("Couldn't find .plist file");
     return;
   }
   var parsedInfoPlist = plist.parse(plistContents);
@@ -52,7 +54,7 @@ function addPlistConfig() {
     return promptPlistValue(parsedInfoPlist, {
       key: 'JiguangAppKey',
       defaultValue: 'jiguang-app-key',
-      existMessage: '"JiguangAppKey" already specified in the plist file.',
+      existMessage: `"JiguangAppKey" already specified in the plist file.`,
       promptMessage: 'What is your JMessage app key for iOS (hit <ENTER> to ignore)',
     });
   }).then(function() {
@@ -60,7 +62,7 @@ function addPlistConfig() {
     return promptPlistValue(parsedInfoPlist, {
       key: 'JiguangMasterSecret',
       defaultValue: 'jiguang-master-secret',
-      existMessage: '"JiguangMasterSecret" already specified in the plist file.',
+      existMessage: `"JiguangMasterSecret" already specified in the plist file.`,
       promptMessage: 'What is your JMessage master secret for iOS (hit <ENTER> to ignore)',
     });
   }).then(function() {
@@ -107,13 +109,13 @@ function findFileByAppName(array, appName) {
 }
 
 function addHeaderImport() {
-  var codePushHeaderImportStatement = '#import "RCTJMessageModule.h"';
-  if (~appDelegateContents.indexOf(codePushHeaderImportStatement)) {
-    console.log('"RCTJMessageModule.h" header already imported.');
+  var jmessageHeaderImportStatement = `#import "RCTJMessageModule.h"`;
+  if (~appDelegateContents.indexOf(jmessageHeaderImportStatement)) {
+    console.log(`"RCTJMessageModule.h" header already imported.`);
   } else {
-    var appDelegateHeaderImportStatement = '#import "AppDelegate.h"';
+    var appDelegateHeaderImportStatement = `#import "AppDelegate.h"`;
     appDelegateContents = appDelegateContents.replace(appDelegateHeaderImportStatement,
-      `${appDelegateHeaderImportStatement}\n${codePushHeaderImportStatement}`);
+      `${appDelegateHeaderImportStatement}\n${jmessageHeaderImportStatement}`);
   }
 }
 
