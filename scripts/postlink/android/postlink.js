@@ -13,7 +13,7 @@ module.exports = function addGradleConfig() {
       key: 'JiguangAppKey',
       findKey: '${JIGUANG_APPKEY}',
       defaultValue: 'jiguang-app-key',
-      existMessage: '"JiguangAppKey" already specified in the plist file.',
+      existMessage: '"JiguangAppKey" already specified in the gradle file.',
       promptMessage: 'What is your JMessage app key for android (hit <ENTER> to ignore)',
     });
   }).then(function() {
@@ -22,7 +22,7 @@ module.exports = function addGradleConfig() {
       key: 'JiguangMasterSecret',
       findKey: '${JIGUANG_MASTER_SECRET}',
       defaultValue: 'jiguang-master-secret',
-      existMessage: '"JiguangMasterSecret" already specified in the plist file.',
+      existMessage: '"JiguangMasterSecret" already specified in the gradle file.',
       promptMessage: 'What is your JMessage master secret for android (hit <ENTER> to ignore)',
     });
   });
