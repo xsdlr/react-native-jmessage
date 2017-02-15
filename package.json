@@ -1,7 +1,24 @@
 {
-  "author": {
-    "name": "xsdlr"
+  "name": "react-native-jmessage",
+  "version": "0.1.0",
+  "author": "https://github.com/xsdlr",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/xsdlr/react-native-jmessage/issues"
   },
+  "homepage": "https://github.com/xsdlr/react-native-jmessage",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/xsdlr/react-native-jmessage"
+  },
+  "keywords": [
+    "jmessage",
+    "react",
+    "react-native",
+    "react-component"
+  ],
+  "description": "React Native Module for JMessage",
+  "main": "index.js",
   "dependencies": {
     "base-64": "^0.1.0",
     "camelcase-keys": "^4.0.0",
@@ -12,25 +29,13 @@
     "promise": "^7.1.1",
     "xcode": "^0.9.1"
   },
-  "description": "react-native library for jmessage",
   "devDependencies": {
     "react": "^15.3.2",
     "react-native": "^0.37.0"
   },
-  "gitHead": "a478215b47770cdead833c75060ec055d32283a3",
-  "keywords": [
-    "jmessage",
-    "react",
-    "react-native",
-    "react-component"
-  ],
-  "license": "MIT",
-  "main": "index.js",
-  "name": "react-native-jmessage",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "version": "0.0.1",
   "rnpm": {
     "android": {
       "packageInstance": "new JMessagePackage(BuildConfig.DEBUG)"
