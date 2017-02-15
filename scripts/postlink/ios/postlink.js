@@ -109,7 +109,7 @@ function findFileByAppName(array, appName) {
 }
 
 function addHeaderImport() {
-  var jmessageHeaderImportStatement = `#import "RCTJMessageModule.h"`;
+  var jmessageHeaderImportStatement = `#import <JMessageModule/RCTJMessageModule.h>`;
   if (~appDelegateContents.indexOf(jmessageHeaderImportStatement)) {
     console.log(`"RCTJMessageModule.h" header already imported.`);
   } else {

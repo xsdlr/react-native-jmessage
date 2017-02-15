@@ -8,10 +8,16 @@
 
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
-#import "RCTBridgeModule.h"
-#import "RCTEventEmitter.h"
 #import <JMessage/JMessage.h>
 #import <JMessage/JMessageDelegate.h>
+
+#if __has_include("RCTEventEmitter.h")
+#import "RCTEventEmitter.h"
+#elif __has_include(<React/RCTEventEmitter.h>)  // back compatibility for RN version < 0.40
+#import <React/RCTEventEmitter.h>
+#else
+#import "React/RCTEventEmitter.h"               // Required when used as a Pod in a Swift project
+#endif
 
 #define OPTION_NULL(value) value ? value : [NSNull null]
 
