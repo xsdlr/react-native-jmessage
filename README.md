@@ -1,22 +1,26 @@
 # React Native JMessage
 
-React Native Module for JMessage.
+极光IM React Native 模块
 
-* [Build](#build)
-* [Installation](#installation)
+支持iOS和android，支持RN@0.40+
+
+[英文文档](https://github.com/xsdlr/react-native-jmessage/blob/master/README_EN.md)
+
+* [构建](#构建)
+* [安装](#安装)
   * [RNPM](#rnpm)
-  * [Manual](#manual)
-    * [iOS Setup](#ios-setup)
-    * [Android Setup](#android-setup)
-* [Example](#example)
+  * [手动](#手动)
+    * [iOS](#ios)
+    * [Android](#android)
+* [示例](#示例)
 
-##Build
-React-Native bridge static library for jmessage SDK which requires:
+##构建
+本模块使用官方jmessage版本如下：
 
 - [x] iOS SDK 3.0.0 build 132
 - [x] Android SDK 2.0.0
 
-##Installation
+##安装
 ```shell
 npm install --save react-native-jmessage@latest
 ```
@@ -24,30 +28,34 @@ npm install --save react-native-jmessage@latest
 ```
  react-native link react-native-jmessage
 ```
-###Manual
+###手动
 ```shell
 npm install --save react-native-jmessage@latest
 ```
-####iOS Setup
+####iOS
 
-* Open your app's Xcode project
+* 打开你的Xcode工程
 
-* Find the `RCTJMessage.xcodeproj` file within the `node_modules/react-native-jmessage/ios` directory  and drag it into the `Libraries` node in Xcode
+* 在`node_modules/react-native-jmessage/ios`目录下找到`RCTJMessage.xcodeproj` 把它拖到`Libraries`中
 
-* Select the project node in Xcode and select the "Build Phases" tab of your project configuration.
+* 选择项目中的"Build Phases"进行配置
 
-* Drag `libRCTJMessage.a` from `Libraries/RCTJMessage.xcodeproj/Products` into the "Link Binary With Libraries" section of your project's "Build Phases" configuration.
+* 在`Libraries/RCTJMessage.xcodeproj/Products`目录下找到`libRCTJMessage.a`拖到 "Link Binary With Libraries"中
 
-* Click the plus sign underneath the "Link Binary With Libraries" list and add the `libz.tbd,libsqlite3.tbd,libresolv.tbd,UIKit.framework,Foundation.framework,SystemConfiguration.framework,CoreFoundation.framework,CFNetwork.framework,Security.framework,CoreTelephony.framework` library .
+* 在"Link Binary With Libraries"列表中添加以下库：
+`libz.tbd,libsqlite3.tbd,libresolv.tbd,UIKit.framework,Foundation.framework,
+SystemConfiguration.framework,CoreFoundation.framework,CFNetwork.framework,
+Security.framework,CoreTelephony.framework`
 
-* Click the plus sign underneath the "Link Binary With Libraries" list and add the JMessage.framework which locate in `../node_modules/react-native-jmessage/ios/RCTJMessage` and the jcore-ios-1.1.0.a which locate in `../node_modules/react-native-jmessage/ios/RCTJMessage/JMessage.framework`. Then Under the "Build Settings" tab of your project configuration, find the "Framework Search Paths" section and edit the value. Add a new value, `$(SRCROOT)/../node_modules/react-native-jmessage/ios/RCTJMessage/**`.
+* 在`../node_modules/react-native-jmessage/ios/RCTJMessage`目录下找到`JMessage.framework`，在`../node_modules/react-native-jmessage/ios/RCTJMessage/JMessage.framework`目录下找到`jcore-ios-1.1.0.a`，把这两个文件拖到"Link Binary With Libraries"中，在"Build Settings"标签设置的"Framework Search Paths"中添加`$(SRCROOT)/../node_modules/react-native-jmessage/ios/RCTJMessage/**`
 
-* add following code to your AppDelegate.m 
+* 在AppDelegate.m文件中添加以下代码 
 ```objectiv-c
 ...
 #import <JMessageModule/RCTJMessageModule.h>
 ```
-* add following code to didFinishLaunchingWithOptions method
+
+* 在didFinishLaunchingWithOptions方法中添加以下代码
 ```objectiv-c
 [JMessage registerForRemoteNotificationTypes:(UIUserNotificationTypeBadge | UIUserNotificationTypeSound | UIUserNotificationTypeAlert) categories:nil];
 	#ifdef DEBUG
@@ -56,18 +64,19 @@ npm install --save react-native-jmessage@latest
 	[RCTJMessageModule setupJMessage:launchOptions apsForProduction:true category:nil];
 	#endif
 ```
-* add JiguangAppKey、JiguangMasterSecret and JiguangAppChannel into Info.plist
 
-####Android Setup
+* 在Info.plist文件中添加JiguangAppKey、JiguangMasterSecret and JiguangAppChannel
 
-* In your `android/settings.gradle` file, make the following additions:
+####Android
+
+* 在`android/settings.gradle`文件中添加如下代码
 
     ```gradle
     include ':react-native-jmessage'
 project(':react-native-jmessage').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-jmessage/android')
     ```
 
-* In your `android/app/build.gradle` file, add the `:react-native-jmessage` project as a compile-time dependency:
+* 在`android/app/build.gradle`文件中添加引用
 
     ```gradle
     ...
@@ -76,7 +85,7 @@ project(':react-native-jmessage').projectDir = new File(rootProject.projectDir, 
         compile project(':react-native-jmessage')
     }
     ```
-* add AppKey、AppChannel and MasterSecret to `android/build.gradle` which locate in react-native-jmessage node_modules folder
+* 在 react-native-jmessage node_modules的`android/build.gradle`文件中添加 AppKey、AppChannel、MasterSecret
 
     ```gradle
     ...
@@ -86,7 +95,7 @@ project(':react-native-jmessage').projectDir = new File(rootProject.projectDir, 
             JIGUANG_MASTER_SECRET: ${JIGUANG_MASTER_SECRET}
         ]
     ```
-* Update the `MainApplication.java` file to use react-native-jmessage via the following changes:
+* 在`MainApplication.java`文件中添加以下代码
 
 ```java
 ...
@@ -107,7 +116,7 @@ public class MainApplication extends Application implements ReactApplication {
     };
 }
 ```
-##Example
+##示例
 [react-native-jmessage-example](https://github.com/xsdlr/react-native-jmessage-example)
 
 
