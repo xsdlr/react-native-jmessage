@@ -62,10 +62,12 @@ export default class JMessage {
     return JMessageModule.logout();
   }
   static sendSingleMessage({name, type, data={}}) {
-    return JMessageModule.sendSingleMessage(name, type, data);
+    return JMessageModule.sendSingleMessage(name, type, data)
+      .then(message => formatMessage(message));
   }
   static sendMessageByCID({cid, type, data={}}) {
-    return JMessageModule.sendMessageByCID(cid, type, data);
+    return JMessageModule.sendMessageByCID(cid, type, data)
+      .then(message => formatMessage(message));
   }
   static allConversations() {
     return JMessageModule.allConversations();
