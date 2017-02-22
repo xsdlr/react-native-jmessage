@@ -4,7 +4,9 @@
 
 支持iOS和android，支持RN@0.40+
 
-[English Document](https://github.com/xsdlr/react-native-jmessage/blob/master/README_EN.md)
+## 文档
+[中文文档](https://xsdlr.github.io/react-native-jmessage)
+[English Document](https://xsdlr.github.io/react-native-jmessage/#/en/)
 
 ## 构建
 本模块使用官方jmessage版本如下：
