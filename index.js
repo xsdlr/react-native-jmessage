@@ -65,6 +65,10 @@ export default class JMessage {
     return JMessageModule.sendSingleMessage(name, type, data)
       .then(message => formatMessage(message));
   }
+  static sendGroupMessage({gid, type, data={}}) {
+    return JMessageModule.sendGroupMessage(gid, type, data)
+      .then(message => formatMessage(message));
+  }
   static sendMessageByCID({cid, type, data={}}) {
     return JMessageModule.sendMessageByCID(cid, type, data)
       .then(message => formatMessage(message));
