@@ -15,7 +15,9 @@ export default class JMessage {
   static appKey = JMessageModule.AppKey;
   static masterSecret = JMessageModule.MasterSecret;
   static authKey = Base64.encode(`${JMessage.appKey}:${JMessage.masterSecret}`);
-  static defaultEventNames = ['onReceiveMessage', 'onSendMessage'];
+  static events = {
+    "onReceiveMessage": "onReceiveMessage",
+  };
 
   static addReceiveMessageListener(cb) {
     return JMessage.eventEmitter.addListener('onReceiveMessage', (message) => {
@@ -23,8 +25,14 @@ export default class JMessage {
       supportMessageMediaURL(_message).then((message) => cb(message));
     });
   }
-  static removeAllListener(eventNames = JMessage.defaultEventNames) {
-    JMessage.eventEmitter.removeAllListeners(eventNames);
+  static removeAllListener(eventNames = Object.keys(JMessage.events)) {
+    if (Array.isArray(eventNames)) {
+      for ( eventName of eventNames) {
+        JMessage.eventEmitter.removeAllListeners(eventName);
+      }
+    } else {
+      JMessage.eventEmitter.removeAllListeners(eventNames);
+    }
   }
   static init() {
     if (Platform.OS === 'android') {
