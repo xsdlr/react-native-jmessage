@@ -51,7 +51,7 @@ npm install --save react-native-jmessage@latest
 
     ```gradle
     include ':react-native-jmessage'
-project(':react-native-jmessage').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-jmessage/android')
+    project(':react-native-jmessage').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-jmessage/android')
     ```
 
 * 在`android/app/build.gradle`文件中添加引用
@@ -67,11 +67,11 @@ project(':react-native-jmessage').projectDir = new File(rootProject.projectDir, 
 
     ```gradle
     ...
-  manifestPlaceholders = [
+    manifestPlaceholders = [
             JIGUANG_APPKEY: ${JIGUANG_APPKEY},
             JGUANG_APPCHANNEL: "developer-default",
             JIGUANG_MASTER_SECRET: ${JIGUANG_MASTER_SECRET}
-        ]
+    ]
     ```
 * 在`MainApplication.java`文件中添加以下代码
 
@@ -94,4 +94,6 @@ public class MainApplication extends Application implements ReactApplication {
     };
 }
 ```
+
+
 
