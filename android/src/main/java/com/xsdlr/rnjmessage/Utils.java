@@ -17,7 +17,7 @@ public class Utils {
     public static <T> T defaultValue(T value, T defaultValue) {
         return value == null ? defaultValue : value;
     }
-    public static String encodeFileToBase64Binary(File file){
+    public static String base64Encode(File file){
         String encodedFile = null;
         try {
             FileInputStream fileInputStreamReader = new FileInputStream(file);
@@ -31,12 +31,18 @@ public class Utils {
         }
         return encodedFile;
     }
-    public static String imageToBase64(File image, Bitmap.CompressFormat format) {
+    public static String base64Encode(File image, Bitmap.CompressFormat format) {
         Bitmap bm = BitmapFactory.decodeFile(image.getAbsolutePath());
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         bm.compress(format, 100, baos);
         byte[] byteArray = baos.toByteArray();
         return Base64.encodeToString(byteArray, Base64.DEFAULT);
+    }
+    public static String base64Encode(String string) {
+        return Base64.encodeToString(string.getBytes(), Base64.DEFAULT);
+    }
+    public static String base64Decode(String string) {
+        return new String(Base64.decode(string.getBytes(), Base64.DEFAULT));
     }
     public static boolean isEmpty(String str) {
         return str == null || str.trim().length() == 0;

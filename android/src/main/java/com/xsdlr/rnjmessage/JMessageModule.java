@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
-
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
@@ -19,13 +18,9 @@ import java.io.FileNotFoundException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
-
 import javax.annotation.Nullable;
-
 import cn.jiguang.api.JCoreInterface;
 import cn.jpush.im.android.api.JMessageClient;
-import cn.jpush.im.android.api.content.EventNotificationContent;
 import cn.jpush.im.android.api.content.ImageContent;
 import cn.jpush.im.android.api.content.MessageContent;
 import cn.jpush.im.android.api.content.TextContent;
@@ -44,7 +39,6 @@ import cn.jpush.im.api.BasicCallback;
 public class JMessageModule extends ReactContextBaseJavaModule {
 
     static boolean isDebug;
-    final static Map<String, Conversation> conversationStore = new HashMap<>();
 
     public JMessageModule(ReactApplicationContext reactContext) {
         super(reactContext);
@@ -205,13 +199,9 @@ public class JMessageModule extends ReactContextBaseJavaModule {
     @ReactMethod
     public void allConversations(final Promise promise) {
         List<Conversation> conversations = JMessageClient.getConversationList();
-        conversationStore.clear();
         WritableArray result = Arguments.createArray();
         for (Conversation conversation: conversations) {
-            String cid = UUID.randomUUID().toString();
-            conversationStore.put(cid, conversation);
             WritableMap conversationMap = transformToWritableMap(conversation);
-            conversationMap.putString("id", cid);
             result.pushMap(conversationMap);
         }
         promise.resolve(result);
@@ -273,7 +263,6 @@ public class JMessageModule extends ReactContextBaseJavaModule {
                     GroupInfo groupInfo = (GroupInfo)conversation.getTargetInfo();
                     JMessageClient.deleteGroupConversation(groupInfo.getGroupID());
             }
-            conversationStore.remove(cid);
             promise.resolve(null);
         } catch (JMessageException e) {
             promise.reject(e.getCode(), e.getMessage());
@@ -331,7 +320,7 @@ public class JMessageModule extends ReactContextBaseJavaModule {
         WritableMap result = Arguments.createMap();
         File avatar = conversation.getAvatarFile();
         if (avatar != null) {
-            String imageBase64 = Utils.imageToBase64(avatar, Bitmap.CompressFormat.PNG);
+            String imageBase64 = Utils.base64Encode(avatar, Bitmap.CompressFormat.PNG);
             result.putString("avatar", imageBase64);
         }
         result.putInt("type", messagePropsToInt(conversation.getType()));
@@ -344,10 +333,12 @@ public class JMessageModule extends ReactContextBaseJavaModule {
             case single:
                 UserInfo userInfo = (UserInfo)conversation.getTargetInfo();
                 result.putString("username", userInfo.getUserName());
+                result.putString("id", String.format("1|%s", userInfo.getUserName()));
                 break;
             case group:
                 GroupInfo groupInfo = (GroupInfo)conversation.getTargetInfo();
                 result.putDouble("groupId", groupInfo.getGroupID());
+                result.putString("id", String.format("2|%s", groupInfo.getGroupID()));
                 break;
             default:
                 break;
@@ -539,13 +530,27 @@ public class JMessageModule extends ReactContextBaseJavaModule {
 
     private Conversation getConversation(String cid) throws JMessageException {
         if (Utils.isEmpty(cid)) {
-            throw  JMessageException.CONVERSATION_ID_EMPTY;
+            throw JMessageException.CONVERSATION_ID_EMPTY;
         }
-        Conversation conversation = conversationStore.get(cid);
+        if (cid.length() < 2 || cid.charAt(1) != '|') {
+            throw JMessageException.CONVERSATION_INVALID;
+        }
+        String type = cid.substring(0, 1);
+        String nameOrGID = cid.substring(2);
+        Conversation conversation = null;
+        switch (type) {
+            case "1":
+                conversation = Conversation.createSingleConversation(nameOrGID);
+                break;
+            case "2":
+                conversation = Conversation.createGroupConversation(Long.valueOf(nameOrGID));
+                break;
+            default:
+                break;
+        }
         if (conversation == null) {
             throw JMessageException.CONVERSATION_INVALID;
         }
         return conversation;
     }
-
 }

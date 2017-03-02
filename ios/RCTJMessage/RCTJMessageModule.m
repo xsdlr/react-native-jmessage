@@ -13,7 +13,6 @@
 @interface RCTJMessageModule () {
 @private
     NSMutableDictionary *_sendMessageIdDic;
-    NSMutableDictionary<NSString*, JMSGConversation*> *_allConversations;
 }
 @end
 
@@ -24,8 +23,7 @@ RCT_EXPORT_MODULE()
 - (instancetype)init
 {
     self = [super init];
-    _sendMessageIdDic = @{}.mutableCopy;
-    _allConversations = @{}.mutableCopy;
+    _sendMessageIdDic = [@{} mutableCopy];
     if (self) {
         self.appKey = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"JiguangAppKey"];
         self.masterSecret = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"JiguangMasterSecret"];
@@ -125,7 +123,7 @@ RCT_EXPORT_MODULE()
 }
 //MARK: 公开方法
 /**
- 是否已经登陆
+ MARK: 是否已经登陆
  
  */
 RCT_EXPORT_METHOD(isLoggedIn
@@ -134,7 +132,7 @@ RCT_EXPORT_METHOD(isLoggedIn
     resolve([[JMSGUser myInfo] username] ? @YES : @NO);
 }
 /**
- 登陆
+ MARK: 登陆
 
  @param username 用户名
  @param password 密码
@@ -152,7 +150,7 @@ RCT_EXPORT_METHOD(login:(NSString *)username
     }];
 }
 /**
- 注销
+ MARK: 注销
  
  */
 RCT_EXPORT_METHOD(logout
@@ -167,7 +165,7 @@ RCT_EXPORT_METHOD(logout
     }];
 }
 /**
- 获得个人用户信息
+ MARK: 获得个人用户信息
  
 */
 RCT_EXPORT_METHOD(myInfo
@@ -195,7 +193,7 @@ RCT_EXPORT_METHOD(myInfo
               });
 }
 /**
- 发送单聊消息
+ MARK: 发送单聊消息
 
  @param username 用户名
  @param type     类型(目前只支持text,image)
@@ -228,7 +226,7 @@ RCT_EXPORT_METHOD(sendSingleMessage
                                 reject:reject];
 }
 /**
- 发送群聊消息
+ MARK: 发送群聊消息
  
  @param groupId  群id
  @param type     类型(目前只支持text,image)
@@ -261,7 +259,7 @@ RCT_EXPORT_METHOD(sendGroupMessage
                                 reject:reject];
 }
 /**
- 根据会话id发送消息
+ MARK: 根据会话id发送消息
  
  @param cid      会话id
  @param type     类型(目前只支持text,image)
@@ -321,7 +319,7 @@ RCT_EXPORT_METHOD(sendMessageByCID
     }];
 }
 /**
- 全部会话列表
+ MARK: 全部会话列表
  
  */
 RCT_EXPORT_METHOD(allConversations
@@ -333,7 +331,6 @@ RCT_EXPORT_METHOD(allConversations
             return;
         }
         NSArray<JMSGConversation*> *conversations = resultObject;
-        [_allConversations removeAllObjects];
         NSMutableArray *result = [NSMutableArray array];
         if (conversations.count == 0) {
             resolve(result);
@@ -343,24 +340,26 @@ RCT_EXPORT_METHOD(allConversations
             NSString *typeDesc = [self toStringWithConversationType:conversation.conversationType];
             [conversation avatarData:^(NSData *data, NSString *objectId, NSError *error) {
                 if (!error) {
-                    NSString *cid = [[NSUUID UUID] UUIDString].lowercaseString;
-                    NSString *username, *groupId;
+                    NSString *username, *groupId, *cid;
                     switch (conversation.conversationType) {
                         case kJMSGConversationTypeSingle:
                         {
                             JMSGUser *userInfo = conversation.target;
                             username = userInfo.username;
+                            cid = [NSString stringWithFormat:@"%@|%@", @(conversation.conversationType), username];
                         }
                             break;
                         case kJMSGConversationTypeGroup:
                         {
                             JMSGGroup *groupInfo = conversation.target;
                             groupId = groupInfo.gid;
+                            cid = [NSString stringWithFormat:@"%@|%@", @(conversation.conversationType), groupId];
                         }
                             break;
                         default:
                             break;
                     }
+                    
                     [result addObject:@{@"id": cid,
                                         @"type": @(conversation.conversationType),
                                         @"typeDesc": typeDesc,
@@ -372,7 +371,6 @@ RCT_EXPORT_METHOD(allConversations
                                         @"avatar": data ? [data base64EncodedStringWithOptions:NSDataBase64Encoding64CharacterLineLength] : [NSNull null],
                                         @"timestamp": conversation.latestMessage ? conversation.latestMessage.timestamp : [NSNull null]
                                         }];
-                    [_allConversations setObject:conversation forKey:cid];
                     if(result.count == conversations.count) {
                         resolve(result);
                         return;
@@ -383,7 +381,7 @@ RCT_EXPORT_METHOD(allConversations
     }];
 }
 /**
- 历史聊天消息
+ MARK: 历史聊天消息
  
  @param cid      会话id
  @param offset   偏移量
@@ -424,7 +422,7 @@ RCT_EXPORT_METHOD(historyMessages
     }];
 }
 /**
- 清除未读记录
+ MARK: 清除未读记录
 
  @param cid 会话id
  */
@@ -452,7 +450,7 @@ RCT_EXPORT_METHOD(clearUnreadCount
     }];
 }
 /**
- 移除会话记录
+ MARK: 移除会话记录
  
  @param cid 会话id
  */
@@ -490,7 +488,6 @@ RCT_EXPORT_METHOD(removeConversation
             default:
                 break;
         }
-        [_allConversations removeObjectForKey:cid];
         resolve(nil);
     }];
 }
@@ -722,15 +719,37 @@ RCT_EXPORT_METHOD(removeConversation
  */
 - (void) detectConversationValidById:(NSString*)cid
                         completionHandler:(JMSGCompletionHandler JMSG_NULLABLE)handler {
-    JMSGConversation *conversation = [_allConversations objectForKey:cid];
-    if (conversation) {
-        handler(conversation, nil);
-        return;
-    }
-    NSError *error = [[NSError alloc] initWithDomain:@""
+    NSError *conversationInvalidError = [[NSError alloc] initWithDomain:@""
                                                 code:kJMSGErrorRNParamConversationInvalid
                                             userInfo:@{NSLocalizedDescriptionKey: @"会话无效"
                                                        }];
-    handler(nil, error);
+    
+    NSArray<NSString*> *params = [cid componentsSeparatedByString:@"|"];
+    if (params.count < 2) {
+        handler(nil, conversationInvalidError);
+        return;
+    }
+    BOOL isSingle;
+    NSInteger type = [[params objectAtIndex:0] integerValue];
+    NSString *nameOrGID = [[params subarrayWithRange:(NSMakeRange(1, [params count] - 1))] componentsJoinedByString:@"|"];
+    switch (type) {
+        case kJMSGConversationTypeSingle:
+            isSingle = @YES;
+            break;
+        case kJMSGConversationTypeGroup:
+            break;
+            isSingle = @NO;
+        default:
+            handler(nil, conversationInvalidError);
+            return;
+    }
+    [self createConversationIsSingle:isSingle nameOrGID:nameOrGID completionHandler:^(id resultObject, NSError *error) {
+        if (!error) {
+            JMSGConversation *conversation = resultObject;
+            handler(conversation, nil);
+        } else {
+            handler(nil, conversationInvalidError);
+        }
+    }];
 }
 @end
