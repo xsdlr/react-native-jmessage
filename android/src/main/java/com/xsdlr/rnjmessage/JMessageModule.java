@@ -13,6 +13,11 @@ import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
+import com.google.gson.Gson;
+import com.google.gson.JsonParseException;
+import com.google.gson.reflect.TypeToken;
+import com.xsdlr.rnjmessage.model.ConversationIDJSONModel;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.HashMap;
@@ -152,8 +157,10 @@ public class JMessageModule extends ReactContextBaseJavaModule {
      * @param promise
      */
     @ReactMethod
-    public void sendSingleMessage(String username, String type, ReadableMap data, final Promise promise) {
-        Conversation conversation = Conversation.createSingleConversation(username);
+    public void sendSingleMessage(String appkey, String username, String type, ReadableMap data, final Promise promise) {
+        Conversation conversation = Utils.isEmpty(appkey)
+                ? Conversation.createSingleConversation(username)
+                : Conversation.createSingleConversation(username, appkey);
         sendMessage(conversation, type, data, promise);
     }
     /**
@@ -329,20 +336,27 @@ public class JMessageModule extends ReactContextBaseJavaModule {
 
         result.putString("laseMessage", getLastMessageContent(conversation));
         result.putInt("unreadCount", conversation.getUnReadMsgCnt());
+
+        ConversationIDJSONModel conversationIDJSONModel = new ConversationIDJSONModel();
+        conversationIDJSONModel.setAppkey(conversation.getTargetAppKey());
+        conversationIDJSONModel.setType(messagePropsToInt(conversation.getType()));
+
         switch (conversation.getType()) {
             case single:
                 UserInfo userInfo = (UserInfo)conversation.getTargetInfo();
                 result.putString("username", userInfo.getUserName());
-                result.putString("id", String.format("1|%s", userInfo.getUserName()));
+                conversationIDJSONModel.setId(userInfo.getUserName());
                 break;
             case group:
                 GroupInfo groupInfo = (GroupInfo)conversation.getTargetInfo();
                 result.putDouble("groupId", groupInfo.getGroupID());
-                result.putString("id", String.format("2|%s", groupInfo.getGroupID()));
+                conversationIDJSONModel.setId(String.valueOf(groupInfo.getGroupID()));
                 break;
             default:
                 break;
         }
+        Gson gson = new Gson();
+        result.putString("id", gson.toJson(conversationIDJSONModel));
         return result;
     }
 
@@ -532,17 +546,28 @@ public class JMessageModule extends ReactContextBaseJavaModule {
         if (Utils.isEmpty(cid)) {
             throw JMessageException.CONVERSATION_ID_EMPTY;
         }
-        if (cid.length() < 2 || cid.charAt(1) != '|') {
+        ConversationIDJSONModel conversationIDJSONModel;
+        try {
+            Gson gson = new Gson();
+            conversationIDJSONModel = gson.fromJson(cid, ConversationIDJSONModel.class);
+        } catch (JsonParseException ex) {
             throw JMessageException.CONVERSATION_INVALID;
         }
-        String type = cid.substring(0, 1);
-        String nameOrGID = cid.substring(2);
+        String appkey = conversationIDJSONModel.getAppkey();
+        String nameOrGID = conversationIDJSONModel.getId();
+        Integer type = conversationIDJSONModel.getType();
+
+        if (Utils.isEmpty(nameOrGID) || type == null) {
+            throw JMessageException.CONVERSATION_INVALID;
+        }
         Conversation conversation = null;
         switch (type) {
-            case "1":
-                conversation = Conversation.createSingleConversation(nameOrGID);
+            case 1:
+                conversation = Utils.isEmpty(appkey)
+                        ? Conversation.createSingleConversation(nameOrGID)
+                        : Conversation.createSingleConversation(nameOrGID, appkey);
                 break;
-            case "2":
+            case 2:
                 conversation = Conversation.createGroupConversation(Long.valueOf(nameOrGID));
                 break;
             default:

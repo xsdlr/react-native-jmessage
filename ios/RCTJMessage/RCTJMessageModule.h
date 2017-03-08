@@ -10,6 +10,7 @@
 #import <UIKit/UIKit.h>
 #import <JMessage/JMessage.h>
 #import <JMessage/JMessageDelegate.h>
+#import "NSJSONSerialization+JSONString.h"
 
 #if __has_include("RCTEventEmitter.h")
 #import "RCTEventEmitter.h"

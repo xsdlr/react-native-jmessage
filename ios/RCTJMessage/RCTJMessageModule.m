@@ -204,6 +204,7 @@ RCT_EXPORT_METHOD(myInfo
  * image为{image: ''}
  */
 RCT_EXPORT_METHOD(sendSingleMessage
+                  :(NSString*)appkey
                   :(NSString*)username
                   :(NSString*)type
                   :(NSDictionary*)data
@@ -217,8 +218,9 @@ RCT_EXPORT_METHOD(sendSingleMessage
         reject([@(error.code) stringValue], error.localizedDescription, error);
         return;
     }
-    [self sendMessageWithUserNameOrGID:username
-                              isSingle:@YES
+    [self sendMessageWithUserNameOrGID:appkey
+                                  name:username
+                              isSingle:YES
                            contentType:type
                                   data:data
                                timeout:0
@@ -250,8 +252,9 @@ RCT_EXPORT_METHOD(sendGroupMessage
         reject([@(error.code) stringValue], error.localizedDescription, error);
         return;
     }
-    [self sendMessageWithUserNameOrGID:groupId
-                              isSingle:@NO
+    [self sendMessageWithUserNameOrGID:nil
+                                  name:groupId
+                              isSingle:NO
                            contentType:type
                                   data:data
                                timeout:0
@@ -302,14 +305,15 @@ RCT_EXPORT_METHOD(sendMessageByCID
         switch (conversation.conversationType) {
             case kJMSGConversationTypeSingle:
                 username = ((JMSGUser*) conversation.target).username;
-                isSingle = @YES;
+                isSingle = YES;
                 break;
             case kJMSGConversationTypeGroup:
                 username = ((JMSGGroup*) conversation.target).gid;
-                isSingle = @NO;
+                isSingle = NO;
                 break;
         }
-        [self sendMessageWithUserNameOrGID:username
+        [self sendMessageWithUserNameOrGID:nil
+                                      name:username
                                   isSingle:isSingle
                                contentType:type
                                       data:data
@@ -346,21 +350,35 @@ RCT_EXPORT_METHOD(allConversations
                         {
                             JMSGUser *userInfo = conversation.target;
                             username = userInfo.username;
-                            cid = [NSString stringWithFormat:@"%@|%@", @(conversation.conversationType), username];
+                            NSData *data = [NSJSONSerialization dataWithJSONObject:@{
+                                                                                     @"appkey": OPTION_NULL(conversation.targetAppKey),
+                                                                                     @"type": @(conversation.conversationType),
+                                                                                     @"id": username
+                                                                                     }
+                                                                           options:NSJSONWritingPrettyPrinted
+                                                                             error:nil];
+                            cid = [data base64EncodedStringWithOptions:NSDataBase64Encoding64CharacterLineLength];
                         }
                             break;
                         case kJMSGConversationTypeGroup:
                         {
                             JMSGGroup *groupInfo = conversation.target;
                             groupId = groupInfo.gid;
-                            cid = [NSString stringWithFormat:@"%@|%@", @(conversation.conversationType), groupId];
+                            NSData *data = [NSJSONSerialization dataWithJSONObject:@{
+                                                                                     @"appkey": OPTION_NULL(conversation.targetAppKey),
+                                                                                     @"type": @(conversation.conversationType),
+                                                                                     @"id": groupId
+                                                                                     }
+                                                                           options:NSJSONWritingPrettyPrinted
+                                                                             error:nil];
+                            cid = [data base64EncodedStringWithOptions:NSDataBase64Encoding64CharacterLineLength];
                         }
                             break;
                         default:
                             break;
                     }
                     
-                    [result addObject:@{@"id": cid,
+                    [result addObject:@{@"id": OPTION_NULL(cid),
                                         @"type": @(conversation.conversationType),
                                         @"typeDesc": typeDesc,
                                         @"username": OPTION_NULL(username),
@@ -593,7 +611,8 @@ RCT_EXPORT_METHOD(removeConversation
  @param resolve 成功回调
  @param reject 失败回调
  */
-- (void) sendMessageWithUserNameOrGID:(NSString *)name
+- (void) sendMessageWithUserNameOrGID:(NSString*)appkey
+                                 name:(NSString*)name
                              isSingle:(BOOL)isSingle
                           contentType:(NSString*)type
                                  data:(NSDictionary*)data
@@ -610,7 +629,8 @@ RCT_EXPORT_METHOD(removeConversation
             reject([@(error.code) stringValue], error.localizedDescription, error);
             return;
         }
-        [self createConversationIsSingle:isSingle
+        [self createConversationWithAppKey:appkey
+                                isSingle:isSingle
                                nameOrGID:name
                        completionHandler:^(id resultObject, NSError *error) {
             if (!error) {
@@ -636,7 +656,8 @@ RCT_EXPORT_METHOD(removeConversation
             reject([@(error.code) stringValue], error.localizedDescription, error);
             return;
         }
-        [self createConversationIsSingle:isSingle
+        [self createConversationWithAppKey:appkey
+                                isSingle:isSingle
                                nameOrGID:name
                        completionHandler:^(id resultObject, NSError *error) {
             if (!error) {
@@ -654,7 +675,6 @@ RCT_EXPORT_METHOD(removeConversation
                 reject([@(error.code) stringValue], error.localizedDescription, error);
             }
         }];
-        NSLog(@"%@", imageURL);
     } else {
         NSError *error = [[NSError alloc] initWithDomain:@""
                                                     code:kJMSGErrorRNMessageProtocolContentTypeNotSupport
@@ -671,11 +691,16 @@ RCT_EXPORT_METHOD(removeConversation
  @param name 对方用户名（群号）
  @param handler 回调
  */
-- (void) createConversationIsSingle:(BOOL)isSingle
+- (void) createConversationWithAppKey:(NSString*)appkey
+                           isSingle:(BOOL)isSingle
                           nameOrGID:(NSString*)name
                   completionHandler:(JMSGCompletionHandler JMSG_NULLABLE)handler {
     if (isSingle) {
-        [JMSGConversation createSingleConversationWithUsername:name completionHandler:handler];
+        if(appkey) {
+            [JMSGConversation createSingleConversationWithUsername:name appKey:appkey completionHandler:handler];
+        } else {
+            [JMSGConversation createSingleConversationWithUsername:name completionHandler:handler];
+        }
     } else {
         [JMSGConversation createGroupConversationWithGroupId:name completionHandler:handler];
     }
@@ -724,26 +749,33 @@ RCT_EXPORT_METHOD(removeConversation
                                             userInfo:@{NSLocalizedDescriptionKey: @"会话无效"
                                                        }];
     
-    NSArray<NSString*> *params = [cid componentsSeparatedByString:@"|"];
-    if (params.count < 2) {
+    NSData *data = [[NSData alloc] initWithBase64EncodedString:cid options:NSDataBase64DecodingIgnoreUnknownCharacters];
+    NSDictionary* dataDic = [NSJSONSerialization JSONObjectWithData:data options:NSJSONReadingAllowFragments error:nil];
+    
+    NSString *appkey = [dataDic valueForKey:@"appkey"];
+    NSNumber *type = [dataDic valueForKey:@"type"];
+    NSString *nameOrGID = [dataDic valueForKey:@"id"];
+    
+    if (!nameOrGID) {
         handler(nil, conversationInvalidError);
         return;
     }
     BOOL isSingle;
-    NSInteger type = [[params objectAtIndex:0] integerValue];
-    NSString *nameOrGID = [[params subarrayWithRange:(NSMakeRange(1, [params count] - 1))] componentsJoinedByString:@"|"];
-    switch (type) {
+    switch ([type integerValue]) {
         case kJMSGConversationTypeSingle:
-            isSingle = @YES;
+            isSingle = YES;
             break;
         case kJMSGConversationTypeGroup:
+            isSingle = NO;
             break;
-            isSingle = @NO;
         default:
             handler(nil, conversationInvalidError);
             return;
     }
-    [self createConversationIsSingle:isSingle nameOrGID:nameOrGID completionHandler:^(id resultObject, NSError *error) {
+    [self createConversationWithAppKey:appkey
+                            isSingle:isSingle
+                           nameOrGID:nameOrGID
+                   completionHandler:^(id resultObject, NSError *error) {
         if (!error) {
             JMSGConversation *conversation = resultObject;
             handler(conversation, nil);
