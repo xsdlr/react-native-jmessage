@@ -5,7 +5,7 @@ React Native Module for JMessage.
 ## Build
 React-Native bridge static library for jmessage SDK which requires:
 
-- [x] iOS SDK 3.0.0 build 132
+- [x] iOS SDK 3.0.1 build 139
 - [x] Android SDK 2.0.0
 
 ## Features

@@ -7,7 +7,7 @@
 ## 构建
 本模块使用官方jmessage版本如下：
 
-- [x] iOS SDK 3.0.0 build 132
+- [x] iOS SDK 3.0.1 build 139
 - [x] Android SDK 2.0.0
 
 ## 功能

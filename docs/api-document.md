@@ -164,6 +164,7 @@ JMessage.myInfo().then((info) => {
 
 | name   | type   | description                |
 |--------|--------|----------------------------|
+| appkey | String | 应用的key                   |
 | name   | String | 用户名                      |
 | type   | String | 消息类型(目前只支持text,image)|
 | data   | Object | 消息数据                    |
