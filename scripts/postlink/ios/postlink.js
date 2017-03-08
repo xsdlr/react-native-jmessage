@@ -18,7 +18,7 @@ var appDelegateContents = fs.readFileSync(appDelegatePath, "utf8");
 var plistContents = fs.readFileSync(plistPath, "utf8");
 
 module.exports = function() {
-  addCustomFramework(['JMessage.framework', 'JMessage.framework/jcore-ios-1.1.0.a']);
+  addCustomFramework(['JMessage.framework', 'JMessage.framework/jcore-ios-1.1.1.a']);
   addPlistConfig();
   addHeaderImport();
   modifyCode();
