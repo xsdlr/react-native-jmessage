@@ -98,7 +98,7 @@
 		</data>
 		<key>Headers/JMessage.h</key>
 		<data>
-		nU/3+nsXVAzUuVJ8SYErBWKpeqY=
+		CWyc1yoV+N9ZG4kSmWvcr/HSdT8=
 		</data>
 		<key>Headers/JMessageDelegate.h</key>
 		<data>
@@ -112,9 +112,9 @@
 		<data>
 		VdDmHaJA7z/cFNzEzlnTDsZT5PU=
 		</data>
-		<key>jcore-ios-1.1.0.a</key>
+		<key>jcore-ios-1.1.1.a</key>
 		<data>
-		LS8sqduce8c6TqKNiOGFYYHIMx8=
+		BY5qMHgWKV7ELnQGRE2+H60hiu4=
 		</data>
 	</dict>
 	<key>files2</key>
@@ -376,11 +376,11 @@
 		<dict>
 			<key>hash</key>
 			<data>
-			nU/3+nsXVAzUuVJ8SYErBWKpeqY=
+			CWyc1yoV+N9ZG4kSmWvcr/HSdT8=
 			</data>
 			<key>hash2</key>
 			<data>
-			dy8khUVFHtg+r5b+p2ZZl3xNl1lyGZtcamV08C8hwKo=
+			Mp7X40R6ikbgChpVhjcM/C1xyTTQPFcMKqspMhN8A5E=
 			</data>
 		</dict>
 		<key>Headers/JMessageDelegate.h</key>
@@ -405,15 +405,15 @@
 			txVmylDD8AOoci/OwdavnVtrOQI4yoYJeCiHJEAFjCQ=
 			</data>
 		</dict>
-		<key>jcore-ios-1.1.0.a</key>
+		<key>jcore-ios-1.1.1.a</key>
 		<dict>
 			<key>hash</key>
 			<data>
-			LS8sqduce8c6TqKNiOGFYYHIMx8=
+			BY5qMHgWKV7ELnQGRE2+H60hiu4=
 			</data>
 			<key>hash2</key>
 			<data>
-			NWa3Zk9CLWMQm1rvhOJky3ZHl3qqbmkW9EBeZW7Fj5I=
+			jXG8AbEICMQMsbzSKsn/lHH/l6rZLqh3O2UinB0YmJA=
 			</data>
 		</dict>
 	</dict>

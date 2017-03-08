@@ -11,6 +11,8 @@
 		CD3B6D391DEECFBA0011B9F5 /* NSObject+KVC.m in Sources */ = {isa = PBXBuildFile; fileRef = CD3B6D381DEECFBA0011B9F5 /* NSObject+KVC.m */; };
 		CD4E9FE81E544726009E2752 /* RCTJMessageModule.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = CD3B6D301DEEBFAD0011B9F5 /* RCTJMessageModule.h */; };
 		CD4E9FEA1E5447AC009E2752 /* RCTJMessageModule.h in Headers */ = {isa = PBXBuildFile; fileRef = CD3B6D301DEEBFAD0011B9F5 /* RCTJMessageModule.h */; };
+		CD86E06B1E6D639600A0B8AE /* NSJSONSerialization+JSONString.h in Headers */ = {isa = PBXBuildFile; fileRef = CD86E0691E6D639600A0B8AE /* NSJSONSerialization+JSONString.h */; };
+		CD86E06C1E6D639600A0B8AE /* NSJSONSerialization+JSONString.m in Sources */ = {isa = PBXBuildFile; fileRef = CD86E06A1E6D639600A0B8AE /* NSJSONSerialization+JSONString.m */; };
 		CD92EFC71DE6B2DC00AC6A25 /* JMessage.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CD92EFC61DE6B2DC00AC6A25 /* JMessage.framework */; };
 /* End PBXBuildFile section */
 
@@ -33,6 +35,8 @@
 		CD3B6D311DEEBFAD0011B9F5 /* RCTJMessageModule.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RCTJMessageModule.m; sourceTree = "<group>"; };
 		CD3B6D371DEECFBA0011B9F5 /* NSObject+KVC.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSObject+KVC.h"; sourceTree = "<group>"; };
 		CD3B6D381DEECFBA0011B9F5 /* NSObject+KVC.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSObject+KVC.m"; sourceTree = "<group>"; };
+		CD86E0691E6D639600A0B8AE /* NSJSONSerialization+JSONString.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSJSONSerialization+JSONString.h"; sourceTree = "<group>"; };
+		CD86E06A1E6D639600A0B8AE /* NSJSONSerialization+JSONString.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSJSONSerialization+JSONString.m"; sourceTree = "<group>"; };
 		CD92EFC61DE6B2DC00AC6A25 /* JMessage.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = JMessage.framework; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -72,6 +76,8 @@
 				CD3B6D311DEEBFAD0011B9F5 /* RCTJMessageModule.m */,
 				CD3B6D371DEECFBA0011B9F5 /* NSObject+KVC.h */,
 				CD3B6D381DEECFBA0011B9F5 /* NSObject+KVC.m */,
+				CD86E0691E6D639600A0B8AE /* NSJSONSerialization+JSONString.h */,
+				CD86E06A1E6D639600A0B8AE /* NSJSONSerialization+JSONString.m */,
 			);
 			path = RCTJMessage;
 			sourceTree = "<group>";
@@ -84,6 +90,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				CD4E9FEA1E5447AC009E2752 /* RCTJMessageModule.h in Headers */,
+				CD86E06B1E6D639600A0B8AE /* NSJSONSerialization+JSONString.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -145,6 +152,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				CD86E06C1E6D639600A0B8AE /* NSJSONSerialization+JSONString.m in Sources */,
 				CD3B6D321DEEBFAD0011B9F5 /* RCTJMessageModule.m in Sources */,
 				CD3B6D391DEECFBA0011B9F5 /* NSObject+KVC.m in Sources */,
 			);
