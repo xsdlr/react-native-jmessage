@@ -1,4 +1,5 @@
 # React Native JMessage
+[![NPM](https://nodei.co/npm/react-native-jmessage.png?downloads=true&stars=true)](https://nodei.co/npm/react-native-jmessage/)
 
 React Native Module for JMessage.
 
